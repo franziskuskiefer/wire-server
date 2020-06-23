@@ -84,7 +84,7 @@ insertInvitation t role email (toUTCTimeMillis -> now) minviter inviteeName phon
   iid <- liftIO mkInvitationId
   code <- liftIO mkInvitationCode
   let inv = Invitation t role iid email now minviter inviteeName phone
-  retry x5 $ batch $ do
+  retry x5 . batch $ do
     setType BatchLogged
     setConsistency Quorum
     addPrepQuery cqlInvitation (t, role, iid, code, email, now, minviter, inviteeName, phone, round timeout)
@@ -140,7 +140,7 @@ deleteInvitation :: MonadClient m => TeamId -> InvitationId -> m ()
 deleteInvitation t i = do
   code <- lookupInvitationCode t i
   case code of
-    Just invCode -> retry x5 $ batch $ do
+    Just invCode -> retry x5 . batch $ do
       setType BatchLogged
       setConsistency Quorum
       addPrepQuery cqlInvitation (t, i)

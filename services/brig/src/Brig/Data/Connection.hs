@@ -49,7 +49,7 @@ import UnliftIO.Async (pooledMapConcurrentlyN_)
 connectUsers :: UserId -> [(UserId, ConvId)] -> AppIO [UserConnection]
 connectUsers from to = do
   now <- toUTCTimeMillis <$> liftIO getCurrentTime
-  retry x5 $ batch $ do
+  retry x5 . batch $ do
     setType BatchLogged
     setConsistency Quorum
     forM_ to $ \(u, c) -> do
