@@ -280,7 +280,7 @@ rmUser user conn = do
             return $
               (Intra.newPush ListComplete (evtFrom e) (Intra.ConvEvent e) (Intra.recipient <$> Data.convMembers c))
                 <&> set Intra.pushConn conn
-                . set Intra.pushRoute Intra.RouteDirect
+                  . set Intra.pushRoute Intra.RouteDirect
           | otherwise -> return Nothing
       for_
         (maybeList1 (catMaybes pp))
@@ -303,7 +303,8 @@ deleteLoop = do
       liftIO $ threadDelay 1000000
 
 safeForever :: (MonadIO m, MonadLogger m, MonadCatch m) => String -> m () -> m ()
-safeForever funName action = forever $
-  action `catchAny` \exc -> do
-    err $ "error" .= show exc ~~ msg (val $ cs funName <> " failed")
-    threadDelay 60000000 -- pause to keep worst-case noise in logs manageable
+safeForever funName action =
+  forever $
+    action `catchAny` \exc -> do
+      err $ "error" .= show exc ~~ msg (val $ cs funName <> " failed")
+      threadDelay 60000000 -- pause to keep worst-case noise in logs manageable

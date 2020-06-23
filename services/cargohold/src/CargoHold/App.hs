@@ -53,7 +53,7 @@ import Bilge.RPC (HasRequestId (..))
 import CargoHold.CloudFront
 import CargoHold.Options as Opt
 import Control.Error (ExceptT, exceptT)
-import Control.Lens ((^.), makeLenses, set, view)
+import Control.Lens (makeLenses, set, view, (^.))
 import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
 import Control.Monad.Trans.Resource (ResourceT, runResourceT, transResourceT)
 import Data.Default (def)

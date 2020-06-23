@@ -33,7 +33,7 @@ import Control.Lens
 import Control.Monad.Catch (MonadCatch)
 import Control.Retry (exponentialBackoff, limitRetries, recovering)
 import qualified Data.Aeson as Aeson
-import Data.Aeson.Lens (_String, key)
+import Data.Aeson.Lens (key, _String)
 import Data.Aeson.QQ (aesonQQ)
 import Data.Aeson.Types (fromJSON, toJSON)
 import Data.ByteString.Conversion
@@ -52,8 +52,8 @@ import Spar.Scim
 import Spar.Types (IdP)
 import qualified Text.XML.DSig as SAML
 import Util
-import qualified Web.Scim.Class.User as ScimC.User
 import qualified Web.Scim.Class.User as Scim.UserC
+import qualified Web.Scim.Class.User as ScimC.User
 import qualified Web.Scim.Filter as Filter
 import qualified Web.Scim.Schema.Common as Scim
 import qualified Web.Scim.Schema.Meta as Scim
@@ -326,10 +326,10 @@ testScimCreateVsUserRef = do
   samlUserShouldSatisfy uref isJust
   deleteViaBrig uid
   samlUserShouldSatisfy uref isJust -- brig doesn't talk to spar right now when users
-    -- are deleted there.  we need to work around this
-    -- fact for now.  (if the test fails here, this may
-    -- mean that you fixed the behavior and can
-    -- change this to 'isNothing'.)
+  -- are deleted there.  we need to work around this
+  -- fact for now.  (if the test fails here, this may
+  -- mean that you fixed the behavior and can
+  -- change this to 'isNothing'.)
   tok <- registerScimToken teamid (Just (idp ^. SAML.idpId))
   storedusr :: Scim.UserC.StoredUser SparTag <-
     do
@@ -742,11 +742,12 @@ testUpdateSameHandle = do
   let userid = scimUserId storedUser
   -- Overwrite the user with another randomly-generated user who has the same name and
   -- handle
-  user' <- randomScimUser <&> \u ->
-    u
-      { Scim.User.userName = Scim.User.userName user,
-        Scim.User.displayName = Scim.User.displayName user
-      }
+  user' <-
+    randomScimUser <&> \u ->
+      u
+        { Scim.User.userName = Scim.User.userName user,
+          Scim.User.displayName = Scim.User.displayName user
+        }
   updatedUser <- updateUser tok userid user'
   -- Get the updated user and check that it matches the user returned by 'updateUser'
   storedUser' <- getUser tok userid
@@ -1120,10 +1121,11 @@ specEmailValidation = do
           act <- getActivationCode brig (Left email)
           case act of
             Nothing -> pure () -- missing activation key/code; this happens if the feature is
-                -- disabled (second test case below)
-            Just kc -> activate brig kc !!! do
-              const 200 === statusCode
-              const (Just False) === fmap Activation.activatedFirst . responseJsonMaybe
+            -- disabled (second test case below)
+            Just kc ->
+              activate brig kc !!! do
+                const 200 === statusCode
+                const (Just False) === fmap Activation.activatedFirst . responseJsonMaybe
         --
         -- copied from brig integration tests.
         getActivationCode ::

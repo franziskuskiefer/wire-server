@@ -103,17 +103,18 @@ deliver1 s bm e
     let u = s ^. serviceUrl
     let b = botMemId bm
     let HttpsUrl url = u
-    recovering x3 httpHandlers $ const
-      $ sendMessage (s ^. serviceFingerprints)
-      $ method POST
-        . maybe id host (urlHost u)
-        . maybe (port 443) port (urlPort u)
-        . paths [url ^. pathL, "bots", toByteString' b, "messages"]
-        . header "Authorization" ("Bearer " <> t)
-        . json e
-        . timeout 5000
-        . secure
-        . expect2xx
+    recovering x3 httpHandlers $
+      const $
+        sendMessage (s ^. serviceFingerprints) $
+          method POST
+            . maybe id host (urlHost u)
+            . maybe (port 443) port (urlPort u)
+            . paths [url ^. pathL, "bots", toByteString' b, "messages"]
+            . header "Authorization" ("Bearer " <> t)
+            . json e
+            . timeout 5000
+            . secure
+            . expect2xx
   | otherwise = return ()
 
 urlHost :: HttpsUrl -> Maybe ByteString
@@ -128,8 +129,9 @@ urlPort (HttpsUrl u) = do
 sendMessage :: [Fingerprint Rsa] -> (Request -> Request) -> Galley ()
 sendMessage fprs reqBuilder = do
   (man, verifyFingerprints) <- view (extEnv . extGetManager)
-  liftIO $ withVerifiedSslConnection (verifyFingerprints fprs) man reqBuilder $ \req ->
-    Http.withResponse req man (const $ return ())
+  liftIO $
+    withVerifiedSslConnection (verifyFingerprints fprs) man reqBuilder $ \req ->
+      Http.withResponse req man (const $ return ())
 
 x3 :: RetryPolicy
 x3 = limitRetries 3 <> constantDelay 1000000

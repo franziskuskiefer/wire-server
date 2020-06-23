@@ -30,7 +30,7 @@ where
 import Data.Hashable (Hashable, hash)
 import Data.SizedHashMap (SizedHashMap)
 import qualified Data.SizedHashMap as SHM
-import Data.Vector ((!), Vector)
+import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 import Imports hiding (lookup)
 
@@ -51,19 +51,21 @@ insert :: (Eq a, Hashable a, MonadIO m) => a -> b -> Dict a b -> m ()
 insert k v = mutDict (SHM.insert k v) . getSlice k
 
 add :: (Eq a, Hashable a, MonadIO m) => a -> b -> Dict a b -> m Bool
-add k v d = liftIO $ atomicModifyIORef' (getSlice k d) $ \m ->
-  if k `elem` SHM.keys m
-    then (m, False)
-    else (SHM.insert k v m, True)
+add k v d = liftIO $
+  atomicModifyIORef' (getSlice k d) $ \m ->
+    if k `elem` SHM.keys m
+      then (m, False)
+      else (SHM.insert k v m, True)
 
 remove :: (Eq a, Hashable a, MonadIO m) => a -> Dict a b -> m Bool
 remove = removeIf (const True)
 
 removeIf :: (Eq a, Hashable a, MonadIO m) => (Maybe b -> Bool) -> a -> Dict a b -> m Bool
-removeIf f k d = liftIO $ atomicModifyIORef' (getSlice k d) $ \m ->
-  if f (SHM.lookup k m)
-    then (SHM.delete k m, True)
-    else (m, False)
+removeIf f k d = liftIO $
+  atomicModifyIORef' (getSlice k d) $ \m ->
+    if f (SHM.lookup k m)
+      then (SHM.delete k m, True)
+      else (m, False)
 
 lookup :: (Eq a, Hashable a, MonadIO m) => a -> Dict a b -> m (Maybe b)
 lookup k = liftIO . fmap (SHM.lookup k) . readIORef . getSlice k

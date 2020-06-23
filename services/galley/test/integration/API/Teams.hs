@@ -63,7 +63,7 @@ import qualified Network.Wai.Utilities.Error as Wai
 import qualified Proto.TeamEvents as E
 import qualified Proto.TeamEvents_Fields as E
 import Test.Tasty
-import Test.Tasty.Cannon ((#), TimeoutUnit (..))
+import Test.Tasty.Cannon (TimeoutUnit (..), (#))
 import qualified Test.Tasty.Cannon as WS
 import Test.Tasty.HUnit
 import TestHelpers (test)
@@ -326,9 +326,10 @@ testEnableTeamSearchVisibilityPerTeam = do
           assertEqual "bad status" status403 status
           assertEqual "bad label" "team-search-visibility-not-enabled" label
   let getSearchVisibilityCheck :: (HasCallStack, MonadCatch m, MonadIO m, MonadHttp m) => TeamSearchVisibility -> m ()
-      getSearchVisibilityCheck vis = getSearchVisibility g owner tid !!! do
-        const 200 === statusCode
-        const (Just (TeamSearchVisibilityView vis)) === responseJsonUnsafe
+      getSearchVisibilityCheck vis =
+        getSearchVisibility g owner tid !!! do
+          const 200 === statusCode
+          const (Just (TeamSearchVisibilityView vis)) === responseJsonUnsafe
 
   Util.withCustomSearchFeature FeatureTeamSearchVisibilityEnabledByDefault $ do
     check "Teams should start with Custom Search Visibility enabled" Public.TeamFeatureEnabled
@@ -937,14 +938,15 @@ testDeleteTeam = do
   Util.assertConvMember owner cid1
   Util.assertConvMember extern cid1
   Util.assertNotConvMember (member ^. userId) cid1
-  void $ WS.bracketR3 c owner extern (member ^. userId) $ \(wsOwner, wsExtern, wsMember) -> do
-    delete (g . paths ["teams", toByteString' tid] . zUser owner . zConn "conn")
-      !!! const 202 === statusCode
-    checkTeamDeleteEvent tid wsOwner
-    checkTeamDeleteEvent tid wsMember
-    -- team members should not receive conversation delete events
-    checkConvDeleteEvent cid1 wsExtern
-    WS.assertNoEvent timeout [wsOwner, wsExtern, wsMember]
+  void $
+    WS.bracketR3 c owner extern (member ^. userId) $ \(wsOwner, wsExtern, wsMember) -> do
+      delete (g . paths ["teams", toByteString' tid] . zUser owner . zConn "conn")
+        !!! const 202 === statusCode
+      checkTeamDeleteEvent tid wsOwner
+      checkTeamDeleteEvent tid wsMember
+      -- team members should not receive conversation delete events
+      checkConvDeleteEvent cid1 wsExtern
+      WS.assertNoEvent timeout [wsOwner, wsExtern, wsMember]
   get (g . paths ["teams", toByteString' tid] . zUser owner)
     !!! const 404 === statusCode
   get (g . paths ["teams", toByteString' tid, "members"] . zUser owner)
@@ -1000,21 +1002,22 @@ testDeleteBindingTeamSingleMember = do
       (/= Just True)
       (getDeletedState extern (other ^. userId))
 
-  void $ WS.bracketRN c [owner, extern] $ \[wsOwner, wsExtern] -> do
-    delete
-      ( g
-          . paths ["/i/teams", toByteString' tid]
-          . zUser owner
-          . zConn "conn"
-      )
-      !!! const 202
-      === statusCode
-    checkUserDeleteEvent owner wsOwner
+  void $
+    WS.bracketRN c [owner, extern] $ \[wsOwner, wsExtern] -> do
+      delete
+        ( g
+            . paths ["/i/teams", toByteString' tid]
+            . zUser owner
+            . zConn "conn"
+        )
+        !!! const 202
+        === statusCode
+      checkUserDeleteEvent owner wsOwner
 
-    WS.assertNoEvent (1 # Second) [wsExtern]
-    -- Note that given the async nature of team deletion, we may
-    -- have other events in the queue (such as TEAM_UPDATE)
-    tryAssertQueue 10 "team delete, should be there" tDelete
+      WS.assertNoEvent (1 # Second) [wsExtern]
+      -- Note that given the async nature of team deletion, we may
+      -- have other events in the queue (such as TEAM_UPDATE)
+      tryAssertQueue 10 "team delete, should be there" tDelete
 
   Util.ensureDeletedState True extern owner
   -- Ensure users are marked as deleted; since we already
@@ -1071,32 +1074,33 @@ testDeleteBindingTeam ownerHasPassword = do
     !!! const 202
     === statusCode
   assertQueue "team member leave 1" $ tUpdate 4 [ownerWithPassword, owner]
-  void $ WS.bracketRN c [owner, (mem1 ^. userId), (mem2 ^. userId), extern] $ \[wsOwner, wsMember1, wsMember2, wsExtern] -> do
-    delete
-      ( g
-          . paths ["teams", toByteString' tid]
-          . zUser owner
-          . zConn "conn"
-          . json
-            ( newTeamDeleteData
-                ( if ownerHasPassword
-                    then Just Util.defPassword
-                    else Nothing
-                )
-            )
-      )
-      !!! const 202
-      === statusCode
-    checkUserDeleteEvent owner wsOwner
-    checkUserDeleteEvent (mem1 ^. userId) wsMember1
-    checkUserDeleteEvent (mem2 ^. userId) wsMember2
-    checkTeamDeleteEvent tid wsOwner
-    checkTeamDeleteEvent tid wsMember1
-    checkTeamDeleteEvent tid wsMember2
-    WS.assertNoEvent (1 # Second) [wsExtern]
-    -- Note that given the async nature of team deletion, we may
-    -- have other events in the queue (such as TEAM_UPDATE)
-    tryAssertQueue 10 "team delete, should be there" tDelete
+  void $
+    WS.bracketRN c [owner, (mem1 ^. userId), (mem2 ^. userId), extern] $ \[wsOwner, wsMember1, wsMember2, wsExtern] -> do
+      delete
+        ( g
+            . paths ["teams", toByteString' tid]
+            . zUser owner
+            . zConn "conn"
+            . json
+              ( newTeamDeleteData
+                  ( if ownerHasPassword
+                      then Just Util.defPassword
+                      else Nothing
+                  )
+              )
+        )
+        !!! const 202
+        === statusCode
+      checkUserDeleteEvent owner wsOwner
+      checkUserDeleteEvent (mem1 ^. userId) wsMember1
+      checkUserDeleteEvent (mem2 ^. userId) wsMember2
+      checkTeamDeleteEvent tid wsOwner
+      checkTeamDeleteEvent tid wsMember1
+      checkTeamDeleteEvent tid wsMember2
+      WS.assertNoEvent (1 # Second) [wsExtern]
+      -- Note that given the async nature of team deletion, we may
+      -- have other events in the queue (such as TEAM_UPDATE)
+      tryAssertQueue 10 "team delete, should be there" tDelete
   forM_ [owner, (mem1 ^. userId), (mem2 ^. userId)] $
     -- Ensure users are marked as deleted; since we already
     -- received the event, should _really_ be deleted
@@ -1323,20 +1327,21 @@ testTeamAddRemoveMemberAboveThresholdNoEvents = do
     deleteTeam tid owner otherRealUsersInTeam teamCidsThatExternBelongsTo extern = do
       c <- view tsCannon
       g <- view tsGalley
-      void $ WS.bracketRN c (owner : extern : otherRealUsersInTeam) $ \(_wsOwner : wsExtern : _wsotherRealUsersInTeam) -> do
-        delete
-          ( g
-              . paths ["teams", toByteString' tid]
-              . zUser owner
-              . zConn "conn"
-              . json (newTeamDeleteData (Just Util.defPassword))
-          )
-          !!! const 202 === statusCode
-        for_ (owner : otherRealUsersInTeam) $ \u -> checkUserDeleteEvent u wsExtern
-        -- Ensure users are marked as deleted; since we already
-        -- received the event, should _really_ be deleted
-        for_ (owner : otherRealUsersInTeam) $ Util.ensureDeletedState True extern
-        mapM_ (flip checkConvDeleteEvent wsExtern) teamCidsThatExternBelongsTo
+      void $
+        WS.bracketRN c (owner : extern : otherRealUsersInTeam) $ \(_wsOwner : wsExtern : _wsotherRealUsersInTeam) -> do
+          delete
+            ( g
+                . paths ["teams", toByteString' tid]
+                . zUser owner
+                . zConn "conn"
+                . json (newTeamDeleteData (Just Util.defPassword))
+            )
+            !!! const 202 === statusCode
+          for_ (owner : otherRealUsersInTeam) $ \u -> checkUserDeleteEvent u wsExtern
+          -- Ensure users are marked as deleted; since we already
+          -- received the event, should _really_ be deleted
+          for_ (owner : otherRealUsersInTeam) $ Util.ensureDeletedState True extern
+          mapM_ (flip checkConvDeleteEvent wsExtern) teamCidsThatExternBelongsTo
       -- ensure the team has a deleted status
       void $
         retryWhileN
@@ -1765,7 +1770,7 @@ postCryptoBroadcastMessageJson2 = do
   cc <- Util.randomClient charlie (someLastPrekeys !! 2)
   connectUsers alice (list1 charlie [])
   let t = 3 # Second -- WS receive timeout
-      -- Missing charlie
+  -- Missing charlie
   let m1 = [(bob, bc, "ciphertext1")]
   Util.postOtrBroadcastMessage id alice ac m1 !!! do
     const 412 === statusCode

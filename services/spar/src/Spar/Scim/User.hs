@@ -58,7 +58,7 @@ import Galley.Types.Teams as Galley
 import Imports
 import Network.URI
 import qualified SAML2.WebSSO as SAML
-import Spar.App (Env, Spar, getUser, sparCtxOpts, validateEmailIfExists, wrapMonadClient, wrapMonadClient)
+import Spar.App (Env, Spar, getUser, sparCtxOpts, validateEmailIfExists, wrapMonadClient)
 import qualified Spar.Data as Data
 import Spar.Intra.Brig as Brig
 import qualified Spar.Intra.Brig as Intra.Brig
@@ -247,17 +247,18 @@ validateScimUser' idp richInfoLimit user = do
     validateRichInfo :: RichInfo -> m RichInfo
     validateRichInfo richInfo = do
       let errorIfTooBig s name =
-            when (s > richInfoLimit) $ throwError $
-              ( Scim.badRequest
-                  Scim.InvalidValue
-                  ( Just . cs $
-                      cs name <> " exceeds the limit: max " <> show richInfoLimit
-                        <> " characters, but got "
-                        <> show s
-                  )
-              )
-                { Scim.status = Scim.Status 413
-                }
+            when (s > richInfoLimit) $
+              throwError $
+                ( Scim.badRequest
+                    Scim.InvalidValue
+                    ( Just . cs $
+                        cs name <> " exceeds the limit: max " <> show richInfoLimit
+                          <> " characters, but got "
+                          <> show s
+                    )
+                )
+                  { Scim.status = Scim.Status 413
+                  }
       errorIfTooBig (richInfoAssocListSize $ richInfoAssocList richInfo) richInfoAssocListURN
       errorIfTooBig (richInfoMapSize richInfo) richInfoMapURN
       pure richInfo
@@ -412,12 +413,12 @@ updateValidScimUser tokinfo uid newScimUser = do
         case newScimUser ^. vsuName of
           Just nm | oldScimUser ^. vsuName /= Just nm -> Intra.Brig.setBrigUserName uid nm
           _ -> pure ()
-        when (oldScimUser ^. vsuHandle /= newScimUser ^. vsuHandle)
-          $ Intra.Brig.setBrigUserHandle uid
-          $ newScimUser ^. vsuHandle
-        when (oldScimUser ^. vsuRichInfo /= newScimUser ^. vsuRichInfo)
-          $ Intra.Brig.setBrigUserRichInfo uid
-          $ newScimUser ^. vsuRichInfo
+        when (oldScimUser ^. vsuHandle /= newScimUser ^. vsuHandle) $
+          Intra.Brig.setBrigUserHandle uid $
+            newScimUser ^. vsuHandle
+        when (oldScimUser ^. vsuRichInfo /= newScimUser ^. vsuRichInfo) $
+          Intra.Brig.setBrigUserRichInfo uid $
+            newScimUser ^. vsuRichInfo
       -- store new user value to scim_user table (spar). (this must happen last, so in case
       -- of crash the client can repeat the operation and it won't be considered a noop.)
       lift . wrapMonadClient $ Data.insertScimUser uid newScimStoredUser
@@ -442,9 +443,9 @@ toScimStoredUser' ::
   Scim.User SparTag ->
   Scim.StoredUser SparTag
 toScimStoredUser' (SAML.Time now) baseuri uid usr =
-  Scim.WithMeta meta
-    $ Scim.WithId uid
-    $ usr {Scim.User.schemas = userSchemas}
+  Scim.WithMeta meta $
+    Scim.WithId uid $
+      usr {Scim.User.schemas = userSchemas}
   where
     mkLocation :: String -> URI
     mkLocation pathSuffix = convURI $ baseuri SAML.=/ cs pathSuffix
@@ -499,11 +500,10 @@ deleteScimUser ScimTokenInfo {stiTeam} uid = do
       -- FUTUREWORK: currently it's impossible to delete the last available team owner via SCIM
       -- (because that owner won't be managed by SCIM in the first place), but if it ever becomes
       -- possible, we should do a check here and prohibit it.
-      unless (userTeam brigUser == Just stiTeam)
-        $
+      unless (userTeam brigUser == Just stiTeam) $
         -- users from other teams get you a 404.
-        throwError
-        $ Scim.notFound "user" (idToText uid)
+        throwError $
+          Scim.notFound "user" (idToText uid)
       ssoId <-
         maybe
           (logThenServerError $ "no userSSOId for user " <> cs (idToText uid))
@@ -569,9 +569,10 @@ assertHandleUnused :: Handle -> UserId -> Scim.ScimHandler Spar ()
 assertHandleUnused = assertHandleUnused' "userName is already taken"
 
 assertHandleUnused' :: Text -> Handle -> UserId -> Scim.ScimHandler Spar ()
-assertHandleUnused' msg hndl uid = lift (Brig.checkHandleAvailable hndl uid) >>= \case
-  True -> pure ()
-  False -> throwError Scim.conflict {Scim.detail = Just msg}
+assertHandleUnused' msg hndl uid =
+  lift (Brig.checkHandleAvailable hndl uid) >>= \case
+    True -> pure ()
+    False -> throwError Scim.conflict {Scim.detail = Just msg}
 
 assertHandleNotUsedElsewhere :: Handle -> UserId -> Scim.ScimHandler Spar ()
 assertHandleNotUsedElsewhere hndl uid = do

@@ -60,15 +60,16 @@ add p = do
   let k = toKey (userId p)
   let v = toField (connId p)
   let d = encode $ PresenceData (resource p) (clientId p) now
-  retry x3 $ commands $ do
-    multi
-    void $ hset k v d
-    -- nb. All presences of a user are expired 'maxIdleTime' after the
-    -- last presence was registered. A client who keeps a presence
-    -- (i.e. websocket) connected for longer than 'maxIdleTime' will be
-    -- silently dropped and receives no more notifications.
-    void $ expire k maxIdleTime
-    exec
+  retry x3 $
+    commands $ do
+      multi
+      void $ hset k v d
+      -- nb. All presences of a user are expired 'maxIdleTime' after the
+      -- last presence was registered. A client who keeps a presence
+      -- (i.e. websocket) connected for longer than 'maxIdleTime' will be
+      -- silently dropped and receives no more notifications.
+      void $ expire k maxIdleTime
+      exec
   where
     maxIdleTime = Seconds (7 * 24 * 60 * 60) -- 7 days
 
@@ -77,15 +78,16 @@ deleteAll [] = return ()
 deleteAll pp = for_ pp $ \p -> do
   let k = toKey (userId p)
   let f = __field p
-  retry x3 $ commands $ do
-    watch (pure k)
-    value <- hget k f
-    multi
-    for_ value $ \v -> do
-      let p' = readPresence (userId p) (f, Lazy.toStrict v)
-      when (Just p == p') $
-        void (hdel k (pure f))
-    exec
+  retry x3 $
+    commands $ do
+      watch (pure k)
+      value <- hget k f
+      multi
+      for_ value $ \v -> do
+        let p' = readPresence (userId p) (f, Lazy.toStrict v)
+        when (Just p == p') $
+          void (hdel k (pure f))
+      exec
 
 list :: MonadClient m => UserId -> m [Presence]
 list u = mapMaybe (readPresence u) <$> commands (hgetall (toKey u))

@@ -41,7 +41,7 @@
 module Spar.Scim.Types where
 
 import Brig.Types.User as Brig
-import Control.Lens hiding ((#), (.=), Strict)
+import Control.Lens hiding (Strict, (#), (.=))
 import Data.Aeson as Aeson
 import qualified Data.CaseInsensitive as CI
 import Data.Handle (Handle)
@@ -52,7 +52,7 @@ import Data.Misc (PlainTextPassword)
 import Imports
 import qualified SAML2.WebSSO as SAML
 import Servant
-import Servant.API.Generic ((:-), ToServantApi)
+import Servant.API.Generic (ToServantApi, (:-))
 import Spar.API.Util
 import Spar.Types
 import Web.Scim.AttrName (AttrName (..))

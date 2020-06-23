@@ -27,7 +27,8 @@ import URI.ByteString hiding (urlEncode)
 
 genSignedURL :: (ToByteString p) => p -> Handler URI
 genSignedURL path = do
-  uri <- cloudFront <$> view aws >>= \case
-    Nothing -> S3.signedURL path
-    Just cf -> CloudFront.signedURL cf path
+  uri <-
+    cloudFront <$> view aws >>= \case
+      Nothing -> S3.signedURL path
+      Just cf -> CloudFront.signedURL cf path
   return $! uri

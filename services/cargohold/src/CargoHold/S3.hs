@@ -91,7 +91,7 @@ import qualified Ropes.Aws as Aws
 import Safe (readMay)
 import qualified System.Logger.Class as Log
 import System.Logger.Message
-import Text.XML.Cursor (($/), (&|), laxElement)
+import Text.XML.Cursor (laxElement, ($/), (&|))
 import URI.ByteString
 
 newtype S3AssetKey = S3AssetKey {s3Key :: Text}
@@ -186,8 +186,9 @@ signedURL path = do
   ttl <- view (settings . setDownloadLinkTTL)
   let cfg = cfg' {Aws.timeInfo = Aws.ExpiresIn (fromIntegral ttl)}
   uri <-
-    liftIO $ Aws.awsUri cfg (s3UriOnly e) $
-      getObject b (Text.decodeLatin1 $ toByteString' path)
+    liftIO $
+      Aws.awsUri cfg (s3UriOnly e) $
+        getObject b (Text.decodeLatin1 $ toByteString' path)
   return =<< toUri uri
   where
     toUri x = case parseURI strictURIParserOptions x of
@@ -294,7 +295,8 @@ calculateChunkSize (fromIntegral -> total) =
       smallSize = total `quot` smallChunks
       bigSize = total `quot` bigChunks
    in V3.ChunkSize $
-        if  | smallChunks < maxSmallChunks -> minSmallSize
+        if
+            | smallChunks < maxSmallChunks -> minSmallSize
             | smallSize <= maxSmallSize -> smallSize
             | bigChunks < maxTotalChunks -> minBigSize
             | otherwise -> bigSize
@@ -399,14 +401,14 @@ createResumable k p typ size tok = do
         chunkBytes = V3.chunkSizeBytes (resumableChunkSize r)
         totalBytes = V3.totalSizeBytes (resumableTotalSize r)
     resumableMeta csize expires upl =
-      setAmzMetaPrincipal p
-        : setAmzMetaTotalSize size
-        : setAmzMetaChunkSize csize
-        : setAmzMetaUploadExpires expires
-        : catMaybes
-          [ setAmzMetaToken <$> tok,
-            setAmzMetaUploadId <$> upl
-          ]
+      setAmzMetaPrincipal p :
+      setAmzMetaTotalSize size :
+      setAmzMetaChunkSize csize :
+      setAmzMetaUploadExpires expires :
+      catMaybes
+        [ setAmzMetaToken <$> tok,
+          setAmzMetaUploadId <$> upl
+        ]
 
 uploadChunk ::
   S3Resumable ->
@@ -504,8 +506,8 @@ completeResumable r = do
       -- the same here.
       let rk = resumableKey r
       let keys =
-            s3ResumableKey rk
-              : map (s3ChunkKey . mkChunkKey rk . chunkNr) (toList chunks)
+            s3ResumableKey rk :
+            map (s3ChunkKey . mkChunkKey rk . chunkNr) (toList chunks)
       void . tryS3 . exec $ (deleteObjects b keys) {dosQuiet = True}
     -- Remote assembly for large(r) chunk sizes (>= 5 MiB) via the
     -- S3 multipart upload API.
@@ -525,9 +527,9 @@ completeResumable r = do
     -- upload is complete.
     verifyChunks cs = do
       let !total = V3.TotalSize $ foldl' (\t v -> t + chunkSize v) 0 cs
-      unless (total == resumableTotalSize r)
-        $ throwE
-        $ uploadIncomplete (resumableTotalSize r) total
+      unless (total == resumableTotalSize r) $
+        throwE $
+          uploadIncomplete (resumableTotalSize r) total
     -- Construct a 'Source' by downloading the chunks.
     chunkSource ::
       Manager ->
@@ -542,9 +544,10 @@ completeResumable r = do
         src <- lift $ do
           let S3ChunkKey ck = mkChunkKey (resumableKey r) (chunkNr c)
           (_, gor) <-
-            recovering x3 handlers $ const
-              $ Aws.sendRequest env s3c
-              $ getObject b ck
+            recovering x3 handlers $
+              const $
+                Aws.sendRequest env s3c $
+                  getObject b ck
           return $ responseBody (gorResponse gor)
         src >> chunkSource man env s3c b cc
 
@@ -741,8 +744,9 @@ x3 = limitRetries 3 <> exponentialBackoff 200000
 handlers :: Monad m => [RetryStatus -> Handler m Bool]
 handlers =
   Retry.httpHandlers
-    ++ [ const $ Handler $ \(S3Error s _ _ _ _ _ _ _ _ _) ->
-           return $ statusIsServerError s
+    ++ [ const $
+           Handler $ \(S3Error s _ _ _ _ _ _ _ _ _) ->
+             return $ statusIsServerError s
        ]
 
 parseMIMEType :: ByteString -> Maybe MIME.Type

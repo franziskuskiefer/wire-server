@@ -49,15 +49,16 @@ data TeamFeatureName
   deriving (Arbitrary) via (GenericUniform TeamFeatureName)
 
 instance FromByteString TeamFeatureName where
-  parser = Parser.takeByteString >>= \b ->
-    case T.decodeUtf8' b of
-      Left e -> fail $ "Invalid TeamFeatureName: " <> show e
-      Right "legalhold" -> pure TeamFeatureLegalHold
-      Right "sso" -> pure TeamFeatureSSO
-      Right "search-visibility" -> pure TeamFeatureSearchVisibility
-      Right "validate-saml-emails" -> pure TeamFeatureValidateSAMLEmails
-      Right "digital-signatures" -> pure TeamFeatureDigitalSignatures
-      Right t -> fail $ "Invalid TeamFeatureName: " <> T.unpack t
+  parser =
+    Parser.takeByteString >>= \b ->
+      case T.decodeUtf8' b of
+        Left e -> fail $ "Invalid TeamFeatureName: " <> show e
+        Right "legalhold" -> pure TeamFeatureLegalHold
+        Right "sso" -> pure TeamFeatureSSO
+        Right "search-visibility" -> pure TeamFeatureSearchVisibility
+        Right "validate-saml-emails" -> pure TeamFeatureValidateSAMLEmails
+        Right "digital-signatures" -> pure TeamFeatureDigitalSignatures
+        Right t -> fail $ "Invalid TeamFeatureName: " <> T.unpack t
 
 instance ToByteString TeamFeatureName where
   builder TeamFeatureLegalHold = "legalhold"

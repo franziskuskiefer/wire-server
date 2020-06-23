@@ -62,13 +62,14 @@ empty :: IO Cache
 empty = Cache <$> newIORef []
 
 get :: (MonadIO m, HasCallStack) => Cache -> m CachedUser
-get c = liftIO $ atomicModifyIORef (cache c) $ \u ->
-  case u of
-    [] ->
-      error
-        "Cache.get: an account was requested from the cache, \
-        \but the cache of available user accounts is empty"
-    (x : xs) -> (xs, x)
+get c = liftIO $
+  atomicModifyIORef (cache c) $ \u ->
+    case u of
+      [] ->
+        error
+          "Cache.get: an account was requested from the cache, \
+          \but the cache of available user accounts is empty"
+      (x : xs) -> (xs, x)
 
 put :: MonadIO m => Cache -> CachedUser -> m ()
 put c a = liftIO $ atomicModifyIORef (cache c) $ \u -> (a : u, ())

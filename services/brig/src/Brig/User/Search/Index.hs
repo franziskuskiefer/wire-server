@@ -82,13 +82,13 @@ import Network.HTTP.Client hiding (path)
 import Network.HTTP.Types (hContentType, statusCode)
 import qualified System.Logger as Log
 import System.Logger.Class
-  ( (+++),
-    Logger,
+  ( Logger,
     MonadLogger (..),
     field,
     info,
     msg,
     val,
+    (+++),
     (~~),
   )
 
@@ -255,15 +255,15 @@ defaultUserQuery u teamSearchInfo (normalized -> term') =
 
 mkUserQuery :: UserId -> TeamSearchInfo -> ES.Query -> IndexQuery Contact
 mkUserQuery (review _TextId -> self) teamSearchInfo q =
-  IndexQuery q
-    $ ES.Filter . ES.QueryBoolQuery
-    $ boolQuery
-      { ES.boolQueryMustNotMatch =
-          [ termQ "suspended" "1", -- [Note: suspended]
-            termQ "_id" self
-          ],
-        ES.boolQueryMustMatch = [optionallySearchWithinTeam teamSearchInfo]
-      }
+  IndexQuery q $
+    ES.Filter . ES.QueryBoolQuery $
+      boolQuery
+        { ES.boolQueryMustNotMatch =
+            [ termQ "suspended" "1", -- [Note: suspended]
+              termQ "_id" self
+            ],
+          ES.boolQueryMustMatch = [optionallySearchWithinTeam teamSearchInfo]
+        }
   where
     termQ f v =
       ES.TermQuery
@@ -468,8 +468,9 @@ updateMapping = liftIndexIO $ do
   ex <- ES.indexExists idx
   unless ex $
     throwM (IndexError "Index does not exist.")
-  void $ traceES "Put mapping" $
-    ES.putMapping idx (ES.MappingName "user") indexMapping
+  void $
+    traceES "Put mapping" $
+      ES.putMapping idx (ES.MappingName "user") indexMapping
 
 resetIndex ::
   MonadIndexIO m =>
@@ -479,9 +480,10 @@ resetIndex ::
   m ()
 resetIndex settings shardCount = liftIndexIO $ do
   idx <- asks idxName
-  gone <- ES.indexExists idx >>= \case
-    True -> ES.isSuccess <$> traceES "Delete Index" (ES.deleteIndex idx)
-    False -> return True
+  gone <-
+    ES.indexExists idx >>= \case
+      True -> ES.isSuccess <$> traceES "Delete Index" (ES.deleteIndex idx)
+      False -> return True
   if gone
     then createIndex settings shardCount
     else throwM (IndexError "Index deletion failed.")
@@ -755,10 +757,11 @@ reindexRowToIndexUser (u, mteam, name, t0, status, t1, handle, t2, colour, t4, a
     pure $
       if shouldIndex
         then
-          iu & set iuTeam mteam
-            . set iuName (Just name)
-            . set iuHandle handle
-            . set iuColourId (Just colour)
+          iu
+            & set iuTeam mteam
+              . set iuName (Just name)
+              . set iuHandle handle
+              . set iuColourId (Just colour)
         else iu
   where
     version :: [Maybe (Writetime Name)] -> m IndexVersion

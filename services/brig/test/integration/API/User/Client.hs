@@ -81,12 +81,13 @@ testAddGetClient hasPwd brig cannon = do
                 const 201 === statusCode
                 const True === isJust . getHeader "Location"
             )
-    void . liftIO $ WS.assertMatch (5 # Second) ws $ \n -> do
-      let j = Object $ List1.head (ntfPayload n)
-      let etype = j ^? key "type" . _String
-      let eclient = j ^? key "client"
-      etype @?= Just "user.client-add"
-      fmap fromJSON eclient @?= Just (Success c)
+    void . liftIO $
+      WS.assertMatch (5 # Second) ws $ \n -> do
+        let j = Object $ List1.head (ntfPayload n)
+        let etype = j ^? key "type" . _String
+        let eclient = j ^? key "client"
+        etype @?= Just "user.client-add"
+        fmap fromJSON eclient @?= Just (Success c)
     return c
   getClient brig uid (clientId c) !!! do
     const 200 === statusCode
@@ -228,12 +229,13 @@ testRemoveClient hasPwd brig cannon = do
   WS.bracketR cannon uid $ \ws -> do
     deleteClient brig uid (clientId c) (if hasPwd then Just defPassword else Nothing)
       !!! const 200 === statusCode
-    void . liftIO $ WS.assertMatch (5 # Second) ws $ \n -> do
-      let j = Object $ List1.head (ntfPayload n)
-      let etype = j ^? key "type" . _String
-      let eclient = j ^? key "client" . key "id" . _String
-      etype @?= Just "user.client-remove"
-      fmap ClientId eclient @?= Just (clientId c)
+    void . liftIO $
+      WS.assertMatch (5 # Second) ws $ \n -> do
+        let j = Object $ List1.head (ntfPayload n)
+        let etype = j ^? key "type" . _String
+        let eclient = j ^? key "client" . key "id" . _String
+        etype @?= Just "user.client-remove"
+        fmap ClientId eclient @?= Just (clientId c)
   -- Not found on retry
   deleteClient brig uid (clientId c) Nothing !!! const 404 === statusCode
   -- Prekeys are gone

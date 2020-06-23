@@ -39,8 +39,7 @@ import Control.Monad.Fail (MonadFail)
 import Data.Aeson
 import Data.ByteString.Conversion
 import Data.Id hiding (client)
-import Data.Json.Util (UTCTimeMillis)
-import Data.Json.Util (toUTCTimeMillis)
+import Data.Json.Util (UTCTimeMillis, toUTCTimeMillis)
 import qualified Data.Text.Ascii as Ascii
 import Data.Time (addUTCTime, getCurrentTime)
 import qualified Data.UUID.V4 as UUID
@@ -705,9 +704,10 @@ testCreateUserInternalSSO brig galley = do
   postUser' True False "dummy" True False Nothing (Just teamid) brig
     !!! const 400 === statusCode
   -- creating user with sso_id, team_id is ok
-  resp <- postUser "dummy" True False (Just ssoid) (Just teamid) brig <!! do
-    const 201 === statusCode
-    const (Just ssoid) === (userSSOId . selfUser <=< responseJsonMaybe)
+  resp <-
+    postUser "dummy" True False (Just ssoid) (Just teamid) brig <!! do
+      const 201 === statusCode
+      const (Just ssoid) === (userSSOId . selfUser <=< responseJsonMaybe)
   -- self profile contains sso id
   let Just uid = userId <$> responseJsonMaybe resp
   profile <- getSelfProfile brig uid

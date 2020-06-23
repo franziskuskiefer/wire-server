@@ -72,8 +72,7 @@ import Gundeck.Options
 import Gundeck.Types.Push (AppName (..), Token, Transport (..))
 import qualified Gundeck.Types.Push as Push
 import Imports
-import Network.AWS (AWSRequest, Rs)
-import Network.AWS (serviceAbbrev, serviceCode, serviceMessage, serviceStatus)
+import Network.AWS (AWSRequest, Rs, serviceAbbrev, serviceCode, serviceMessage, serviceStatus)
 import qualified Network.AWS as AWS
 import qualified Network.AWS.Data as AWS
 import qualified Network.AWS.Env as AWS
@@ -141,9 +140,10 @@ newtype Amazon a = Amazon
     )
 
 instance MonadUnliftIO Amazon where
-  askUnliftIO = Amazon $ ReaderT $ \r ->
-    withUnliftIO $ \u ->
-      return (UnliftIO (unliftIO u . flip runReaderT r . unAmazon))
+  askUnliftIO = Amazon $
+    ReaderT $ \r ->
+      withUnliftIO $ \u ->
+        return (UnliftIO (unliftIO u . flip runReaderT r . unAmazon))
 
 instance MonadLogger Amazon where
   log l m = view logger >>= \g -> Logger.log g l m
@@ -202,9 +202,9 @@ mkEnv lgr opts mgr = do
     getQueueUrl :: AWS.Env -> Text -> IO QueueUrl
     getQueueUrl e q = do
       x <-
-        runResourceT . AWST.runAWST e
-          $ AWST.trying AWS._Error
-          $ AWST.send (SQS.getQueueURL q)
+        runResourceT . AWST.runAWST e $
+          AWST.trying AWS._Error $
+            AWST.send (SQS.getQueueURL q)
       either
         (throwM . GeneralError)
         (return . QueueUrl . view SQS.gqursQueueURL)
@@ -438,16 +438,17 @@ publish arn txt attrs = do
 listen :: Int -> (Event -> IO ()) -> Amazon ()
 listen throttleMillis callback = do
   QueueUrl url <- view eventQueue
-  forever $ handleAny unexpectedError $ do
-    msgs <- view rmrsMessages <$> send (receive url)
-    void $ mapConcurrently (onMessage url) msgs
-    when (null msgs) $
-      threadDelay (1000 * throttleMillis)
+  forever $
+    handleAny unexpectedError $ do
+      msgs <- view rmrsMessages <$> send (receive url)
+      void $ mapConcurrently (onMessage url) msgs
+      when (null msgs) $
+        threadDelay (1000 * throttleMillis)
   where
     receive url =
       SQS.receiveMessage url
         & set SQS.rmWaitTimeSeconds (Just 20)
-        . set SQS.rmMaxNumberOfMessages (Just 10)
+          . set SQS.rmMaxNumberOfMessages (Just 10)
     onMessage url m =
       case decodeStrict =<< Text.encodeUtf8 <$> m ^. mBody of
         Nothing ->

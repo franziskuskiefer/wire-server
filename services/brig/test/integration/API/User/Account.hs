@@ -515,7 +515,7 @@ testUserUpdate brig cannon aws = do
                 fmap userAssets u
               )
           )
-      . responseJsonMaybe
+        . responseJsonMaybe
   -- get only the new name
   get (brig . path "/self/name" . zUser alice) !!! do
     const 200 === statusCode
@@ -822,14 +822,15 @@ testEmailPhoneDelete brig cannon = do
   WS.bracketR cannon uid $ \ws -> do
     delete (brig . path "/self/email" . zUser uid . zConn "c")
       !!! (const 200 === statusCode)
-    void . liftIO $ WS.assertMatch (5 # Second) ws $ \n -> do
-      let j = Object $ List1.head (ntfPayload n)
-      let etype = j ^? key "type" . _String
-      let euser = j ^? key "user" . key "id" . _String
-      let eemail = j ^? key "user" . key "email" . _String
-      etype @?= Just "user.identity-remove"
-      euser @?= Just (UUID.toText (toUUID uid))
-      eemail @?= Just (fromEmail email)
+    void . liftIO $
+      WS.assertMatch (5 # Second) ws $ \n -> do
+        let j = Object $ List1.head (ntfPayload n)
+        let etype = j ^? key "type" . _String
+        let euser = j ^? key "user" . key "id" . _String
+        let eemail = j ^? key "user" . key "email" . _String
+        etype @?= Just "user.identity-remove"
+        euser @?= Just (UUID.toText (toUUID uid))
+        eemail @?= Just (fromEmail email)
   get (brig . path "/self" . zUser uid) !!! do
     const 200 === statusCode
     const Nothing === (userEmail <=< responseJsonMaybe)
@@ -849,14 +850,15 @@ testEmailPhoneDelete brig cannon = do
   WS.bracketR cannon uid $ \ws -> do
     delete (brig . path "/self/phone" . zUser uid . zConn "c")
       !!! const 200 === statusCode
-    void . liftIO $ WS.assertMatch (5 # Second) ws $ \n -> do
-      let j = Object $ List1.head (ntfPayload n)
-      let etype = j ^? key "type" . _String
-      let euser = j ^? key "user" . key "id" . _String
-      let ephone = j ^? key "user" . key "phone" . _String
-      etype @?= Just "user.identity-remove"
-      euser @?= Just (UUID.toText (toUUID uid))
-      ephone @?= Just (fromPhone phone)
+    void . liftIO $
+      WS.assertMatch (5 # Second) ws $ \n -> do
+        let j = Object $ List1.head (ntfPayload n)
+        let etype = j ^? key "type" . _String
+        let euser = j ^? key "user" . key "id" . _String
+        let ephone = j ^? key "user" . key "phone" . _String
+        etype @?= Just "user.identity-remove"
+        euser @?= Just (UUID.toText (toUUID uid))
+        ephone @?= Just (fromPhone phone)
   get (brig . path "/self" . zUser uid) !!! do
     const 200 === statusCode
     const Nothing === (userPhone <=< responseJsonMaybe)
@@ -901,9 +903,10 @@ testDeleteUserByPassword brig cannon aws = do
   act <- getActivationCode brig (Left eml)
   case act of
     Nothing -> liftIO $ assertFailure "missing activation key/code"
-    Just kc -> activate brig kc !!! do
-      const 404 === statusCode
-      const (Just "invalid-code") === fmap Error.label . responseJsonMaybe
+    Just kc ->
+      activate brig kc !!! do
+        const 404 === statusCode
+        const (Just "invalid-code") === fmap Error.label . responseJsonMaybe
   -- Connections involving uid1 are gone (uid2 <-> uid3 remains)
   let u1Conns = UserConnectionList [] False
   let u2Conns = UserConnectionList (maybeToList (responseJsonMaybe con23)) False
@@ -1061,12 +1064,13 @@ setHandleAndDeleteUser brig cannon u others aws execDelete = do
   -- Delete the user
   WS.bracketRN cannon (uid : others) $ \wss -> do
     execDelete uid
-    void . liftIO $ WS.assertMatchN (5 # Second) wss $ \n -> do
-      let j = Object $ List1.head (ntfPayload n)
-      let etype = j ^? key "type" . _String
-      let euser = j ^? key "id" . _String
-      etype @?= Just "user.delete"
-      euser @?= Just (UUID.toText (toUUID uid))
+    void . liftIO $
+      WS.assertMatchN (5 # Second) wss $ \n -> do
+        let j = Object $ List1.head (ntfPayload n)
+        let etype = j ^? key "type" . _String
+        let euser = j ^? key "id" . _String
+        etype @?= Just "user.delete"
+        euser @?= Just (UUID.toText (toUUID uid))
     liftIO $ Util.assertUserJournalQueue "user deletion, setHandleAndDeleteUser: " aws (userDeleteJournaled uid)
   -- Cookies are gone
   n2 <- countCookies brig uid defCookieLabel
@@ -1112,7 +1116,7 @@ setHandleAndDeleteUser brig cannon u others aws execDelete = do
                   userHandle =<< u'
                 )
             )
-        . responseJsonMaybe
+          . responseJsonMaybe
     assertDeletedProfilePublic = do
       const 200 === statusCode
       const (Just noPict, Just True, Nothing)
@@ -1122,4 +1126,4 @@ setHandleAndDeleteUser brig cannon u others aws execDelete = do
                   profileHandle =<< u'
                 )
             )
-        . responseJsonMaybe
+          . responseJsonMaybe

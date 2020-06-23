@@ -124,9 +124,9 @@ newtype UserClients = UserClients
 
 modelUserClients :: Doc.Model
 modelUserClients =
-  Doc.defineModel "UserClients"
-    $ Doc.property "" (Doc.unique $ Doc.array Doc.bytes')
-    $ Doc.description "Map of user IDs to sets of client IDs ({ UserId: [ClientId] })."
+  Doc.defineModel "UserClients" $
+    Doc.property "" (Doc.unique $ Doc.array Doc.bytes') $
+      Doc.description "Map of user IDs to sets of client IDs ({ UserId: [ClientId] })."
 
 instance ToJSON UserClients where
   toJSON =
