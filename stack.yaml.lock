@@ -567,12 +567,12 @@ packages:
   original:
     hackage: splitmix-0.0.4
 - completed:
-    hackage: ormolu-0.0.5.0@sha256:e5f49c51c6ebd8b3cd16113e585312de7315c1e1561fbb599988cebc61c14f4e,7956
+    hackage: ormolu-0.1.1.0@sha256:93c625bbe0892a62165fd4c72461fad56122d09fd3b19207aa580f00e3eb1ab6,6038
     pantry-tree:
-      size: 66187
-      sha256: fd591a96bb129610f89d23d2986b1b11dad8c1c41e23ea1c6f03340b7265b617
+      size: 71553
+      sha256: 0f012cbd5bdda99332e5f835842bb8936bdef16041f048363ad8612f7b23a599
   original:
-    hackage: ormolu-0.0.5.0
+    hackage: ormolu-0.1.1.0
 - completed:
     hackage: ghc-lib-parser-8.10.1.20200412@sha256:b0517bb150a02957d7180f131f5b94abd2a7f58a7d1532a012e71618282339c2,8751
     pantry-tree:
@@ -581,12 +581,12 @@ packages:
   original:
     hackage: ghc-lib-parser-8.10.1.20200412@sha256:b0517bb150a02957d7180f131f5b94abd2a7f58a7d1532a012e71618282339c2,8751
 - completed:
-    hackage: headroom-0.2.1.0@sha256:084b72a071454516bff30c3f50e4f671fb12ee062602693ad5ffcafdea5fab99,8140
+    hackage: headroom-0.2.2.1@sha256:9f75c3b780f43d8e33c8805617756318a701caed94048b15d771f025ac66ce03,7969
     pantry-tree:
-      size: 9195
-      sha256: 11d2ac77cee54cc1f222e574e4126189fe5b60a47a1aedbafc2ab0de709b29c6
+      size: 9257
+      sha256: a83014841ad4177dba13d7a13cd220915322515bde38791d95428782dfaa2980
   original:
-    hackage: headroom-0.2.1.0
+    hackage: headroom-0.2.2.1
 snapshots:
 - completed:
     size: 524996
