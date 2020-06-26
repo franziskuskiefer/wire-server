@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7a319e64df8c4523bb37b4ce4f2249a99ac0db1b935aa093e8d781b726fab68a
+-- hash: d13abd89deab358732473b2297ebb01520a22cc4c6c624438d320a53e3ee643c
 
 name:           cargohold
 version:        1.5.0
@@ -52,7 +52,7 @@ library
     , aeson >=0.11
     , attoparsec >=0.12
     , auto-update >=0.1.4
-    , aws >=0.18
+    , aws >=0.19
     , base >=4 && <5
     , base16-bytestring >=0.1
     , base64-bytestring >=1.0

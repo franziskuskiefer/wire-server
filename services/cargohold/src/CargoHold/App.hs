@@ -127,7 +127,7 @@ initAws o l m = do
 
 endpointToConfig :: AWSEndpoint -> Aws.S3Configuration qt
 endpointToConfig (AWSEndpoint host secure port) =
-  (Aws.s3 (toProtocol secure) host False)
+  (Aws.s3v4 (toProtocol secure) host False Aws.SignWithEffort)
     { Aws.s3Port = port,
       Aws.s3RequestStyle = Aws.PathStyle
     }
